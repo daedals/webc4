@@ -22,7 +22,17 @@ class PlayerController(Controller):
 
 
     def make_move(self, board, apl):
-        return input()
+
+        valid = False
+
+        while not valid:
+            try:
+                inp = int(input())
+                assert 0 < inp < 7
+            except:
+                print("Invalid Input, try again.")
+
+        return inp - 1
 
         
 class RandomController(Controller):
