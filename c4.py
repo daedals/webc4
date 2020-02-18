@@ -4,7 +4,7 @@ import random
 import numpy as np
 from scipy.signal import convolve2d
 
-from controller import PlayerController, RandomController
+from controller import Controller, PlayerController, RandomController
 
 
 
@@ -35,7 +35,8 @@ class C4Game:
 
 
 def main():
-    PlayerController()
+
+    c4 = C4Game(PlayerController("Player"), RandomController("Random"))
 
 
 if __name__ == "__main__":
