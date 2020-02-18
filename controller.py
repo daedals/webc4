@@ -28,9 +28,11 @@ class PlayerController(Controller):
         while not valid:
             try:
                 inp = int(input())
-                assert 0 < inp < 7
-            except:
-                print("Invalid Input, try again.")
+                assert 0 < inp < 8
+                valid = True
+                
+            except Exception as e:
+                print("Invalid Input, try again.", e)
 
         return inp - 1
 
