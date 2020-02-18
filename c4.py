@@ -4,6 +4,35 @@ import random
 import numpy as np
 from scipy.signal import convolve2d
 
+from abc import ABC, abstractmethod
+
+
+class Controller(ABC):
+
+
+    def __init__(self, name):
+        self.name = name
+
+
+    @abstractmethod
+    def make_move(self, board, apl):
+        NotImplementedError()
+
+
+
+class PlayerController(Controller):
+
+
+    def make_move(self, board, apl):
+        return input()
+
+        
+class RandomController(Controller):
+
+
+    def make_move(self, board, apl):
+        return random.randrange(0, 7)
+
 
 
 class C4Game:
@@ -20,8 +49,21 @@ class C4Game:
         # apl := active player
         self.apl = random.choice([1, -1])
 
+        assert isinstance(player1instance, Controller) and isinstance(player2instance, Controller)
+
+        # indeices to match (-1, 0, 1) for board values
+        self.players = [None, player1instance, player2instance]
+
 
     def pprint(self):
         for r in self.board:
             print( *[" XO"[val] for val in r] )
 
+
+
+def main():
+    PlayerController()
+
+
+if __name__ == "__main__":
+    main()
