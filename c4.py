@@ -39,7 +39,7 @@ class C4Game:
             print( *[".XO"[val] for val in row] )
 
         print(*range(1,8))
-        print()+
+        print()
 
 
     def do_turn(self):
