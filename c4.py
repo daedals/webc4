@@ -1,11 +1,8 @@
 
 
 import random
-
 import numpy as np
-
 from scipy.signal import convolve2d
-
 
 
 
@@ -25,4 +22,6 @@ class C4Game:
 
 
     def pprint(self):
-        pass
+        for r in self.board:
+            print( *[" XO"[val] for val in r] )
+
