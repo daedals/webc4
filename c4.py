@@ -4,7 +4,7 @@ import random
 import numpy as np
 from scipy.signal import convolve2d
 
-from controller import Controller, PlayerController, RandomController
+from controller import Controller, PlayerController, RandomController, AIController
 
 
 
@@ -48,7 +48,7 @@ class C4Game:
 
         while not valid:
             try:
-                column = self.players[self.active_player].make_move(self.players, self.active_player)
+                column = self.players[self.active_player].make_move(self.board, self.active_player)
 
                 assert isinstance(column, int), "Input type check failed."
                 assert 0 <= column <= 6, "Boundary check failed."
@@ -110,7 +110,7 @@ class C4Game:
 
 def main():
 
-    c4 = C4Game(RandomController("Player"), RandomController("Random"))
+    c4 = C4Game(PlayerController("Player"), AIController("Random"))
     
     c4.game_loop()
 
