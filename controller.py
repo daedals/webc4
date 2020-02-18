@@ -57,7 +57,7 @@ class AIController(Controller):
 			new_board = np.copy(board)
 			new_board[row, column] = active_player
 
-			value = self.min_max(new_board, active_player, active_player*(-1), 11)
+			value = self.min_max(new_board, active_player, active_player*(-1), 2)
 			if value > max_value:
 				max_value = value
 				best_column = column
@@ -90,20 +90,23 @@ class AIController(Controller):
 			convolusion = convolve2d(board, k, mode="valid")
 			# Check for winning position
 			if np.any(convolusion == 4 * player):
-			   evaluation = 100
+			    return 100
 			# Check for losing position
 			elif np.any(convolusion == -4 * player):
-				evaluation = -100
+			    return -100
 			# Check for double attack
 
 			# Check for seven
-			
+		
+		evaluation = 5 * np.sum(board == player)
+
 		return evaluation
 
 	def search_board_for_pattern(self, board, pattern):
 		pass
 
 	def min_max(self, board, player, active_player, depth):
+		print(depth)
 		if not depth:
 			return self.evaluate_board(board, player)
 		
