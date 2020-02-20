@@ -6,6 +6,8 @@ from scipy.signal import convolve2d
 
 from abc import ABC, abstractmethod
 
+from time import time_ns
+
 
 class Controller(ABC):
 
@@ -50,11 +52,13 @@ class AIController(Controller):
 
 
 	def make_move(self, board, active_player):
+
+		start_time = time_ns()
 		max_value = -200
 		best_column = None
 
 		# check how many moves are left and adapt depth
-		depth = min(5, np.sum(board == 0)) 
+		depth = min(4, np.sum(board == 0)) 
 
 		for row, column in self.valid_moves(board, active_player):
 
@@ -66,8 +70,10 @@ class AIController(Controller):
 				max_value = value
 				best_column = column
 
-			print(f"Row {column+1} was valued at {value}.")
+			# print(f"Column {column+1} was valued at {value}.")
 
+		delta_time = time_ns() - start_time
+		print(f"Choose Column {best_column+1} within {delta_time/10**9:.2f}s")
 		return best_column
 
 
