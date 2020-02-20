@@ -6,6 +6,10 @@ from scipy.signal import convolve2d
 
 from controller import Controller, PlayerController, RandomController, AIController
 
+class Color:
+	blue = '\033[94m'
+	red = '\033[91m'
+	white = '\033[0m'
 
 
 class C4Game:
