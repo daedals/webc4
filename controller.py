@@ -50,18 +50,20 @@ class AIController(Controller):
 
 
 	def make_move(self, board, active_player):
-		max_value = -100
-		best_column = 0
+		max_value = -200
+		best_column = None
 
 		for row, column in self.valid_moves(board, active_player):
 
 			new_board = np.copy(board)
 			new_board[row, column] = active_player
 
-			value = self.min_max(new_board, active_player, active_player*(-1), 2)
+			value = self.min_max(new_board, active_player, active_player*(-1), 4)
 			if value > max_value:
 				max_value = value
 				best_column = column
+
+			print(f"Row {column+1} was valued at {value}.")
 
 		return best_column
 
@@ -126,13 +128,33 @@ class AIController(Controller):
 
 	def evaluate_board(self, board, player):
 
+		# on finished game return immediatly
 		evaluation = self.check_win_condition(board, player)
 
 		if evaluation:
 			return evaluation
 		
+		# check for threats, namely "XXX "
+		kernel = [
+			np.array([[1, 1, 1, 1]], dtype=np.int8),
+			np.array([[1], [1], [1], [1]], dtype=np.int8),
+			np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]], dtype=np.int8),
+			np.array([[0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0], [1, 0, 0, 0]], dtype=np.int8)
+		]
+
+		for k in kernel:
+
+			convolusion = convolve2d(board, k, mode="valid")
+			# Check for winning position
+			if np.any(convolusion == 3 * player):
+				evaluation += 5
+			# Check for losing position
+			elif np.any(convolusion == -3 * player):
+				evaluation -= 5
+
+		
 		# check how many own pieces are in the middle row
-		evaluation = 5 * np.sum(board[:,3] == player)
+		evaluation = 3 * np.sum(board[:,3] == player)
 
 		return evaluation
 

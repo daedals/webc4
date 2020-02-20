@@ -40,8 +40,8 @@ class C4Game:
 		print( "╓─" + (w-1) * "──┬─" + "──╖" )
 		for row in self.board:
 			print( "║", " │ ".join([" XO"[col] for col in row]), "║" )
+			print( "╟─" + (w-1) * "──┼─" + "──╢" )
 
-		print( "╟─" + (w-1) * "──┼─" + "──╢" )
 		print("║", " │ ".join([str(i+1) for i in range(w)]), "║")
 		print( "╙─" + (w-1) * "──┴─" + "──╜" )
 
@@ -77,6 +77,8 @@ class C4Game:
 
 		while True:
 
+			print(f"{self.players[self.active_player].name} ({'.XO'[self.active_player]}) has to move.")
+
 			self.do_turn()
 			self.turn += 1
 
@@ -85,7 +87,7 @@ class C4Game:
 				break
 
 			if self.turn > 41:
-				print("It was a Tie, suckers!")
+				print("It was a Tie!")
 				break
 
 			self.active_player *= -1
@@ -111,10 +113,9 @@ class C4Game:
 			
 
 
-
 def main():
 
-	c4 = C4Game(PlayerController("Player"), AIController("Random"))
+	c4 = C4Game(PlayerController("Player"), AIController("AI"))
 
 	c4.game_loop()
 
