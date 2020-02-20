@@ -48,6 +48,7 @@ class RandomController(Controller):
 
 class AIController(Controller):
 
+
 	def make_move(self, board, active_player):
 		max_value = -100
 		best_column = 0
@@ -64,53 +65,17 @@ class AIController(Controller):
 
 		return best_column
 
-	def valid_moves(self, board, active_player):
-		for column in range(7):
-			(column_values,) = np.where(board[:,column] == 0)
-			
-			if not len(column_values):
-				continue
-
-			row = column_values[-1]
-			yield (row, column)
-
-	def evaluate_board(self, board, player):
-
-		evaluation = 0
-
-		kernel = [
-			np.array([[1, 1, 1, 1]], dtype=np.int8),
-			np.array([[1], [1], [1], [1]], dtype=np.int8),
-			np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]], dtype=np.int8),
-			np.array([[0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0], [1, 0, 0, 0]], dtype=np.int8)
-		]
-
-		for k in kernel:
-
-			convolusion = convolve2d(board, k, mode="valid")
-			# Check for winning position
-			if np.any(convolusion == 4 * player):
-			    return 100
-			# Check for losing position
-			elif np.any(convolusion == -4 * player):
-			    return -100
-			# Check for double attack
-
-			# Check for seven
-		
-		evaluation = 5 * np.sum(board == player)
-
-		return evaluation
-
-	def search_board_for_pattern(self, board, pattern):
-		pass
 
 	def min_max(self, board, player, active_player, depth):
-		print(depth)
+
 		if not depth:
 			return self.evaluate_board(board, player)
-		
-		min_max = 0
+
+		# if at any time any parties win is imminent, return immediately
+		if min_max := self.check_win_condition(board, player):
+			return min_max
+
+		min_max = 101 * (1,-1)[player == active_player]
 
 		for row, column in self.valid_moves(board,active_player):
 
@@ -126,3 +91,51 @@ class AIController(Controller):
 		return min_max
 
 
+	def valid_moves(self, board, active_player):
+		for column in range(7):
+			(column_values,) = np.where(board[:,column] == 0)
+			
+			if not len(column_values):
+				continue
+
+			row = column_values[-1]
+			yield (row, column)
+
+
+	def check_win_condition(self, board, player):
+
+		kernel = [
+			np.array([[1, 1, 1, 1]], dtype=np.int8),
+			np.array([[1], [1], [1], [1]], dtype=np.int8),
+			np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]], dtype=np.int8),
+			np.array([[0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0], [1, 0, 0, 0]], dtype=np.int8)
+		]
+
+		for k in kernel:
+
+			convolusion = convolve2d(board, k, mode="valid")
+			# Check for winning position
+			if np.any(convolusion == 4 * player):
+				return 100
+			# Check for losing position
+			elif np.any(convolusion == -4 * player):
+				return -100
+
+		return 0
+
+
+	def evaluate_board(self, board, player):
+
+		evaluation = self.check_win_condition(board, player)
+
+		if evaluation:
+			return evaluation
+		
+		# check how many own pieces are in the middle row
+		evaluation = 5 * np.sum(board[:,3] == player)
+
+		return evaluation
+
+
+	def search_board_for_pattern(self, board, pattern):
+		pass
