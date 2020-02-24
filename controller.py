@@ -52,6 +52,117 @@ class AIController(Controller):
 
 
 	def make_move(self, board, active_player):
+		NotImplementedError()
+
+	def valid_moves(self, board, active_player):
+
+		for column in [3, 2, 4, 1, 5, 0, 6]:
+			(column_values,) = np.where(board[:,column] == 0)
+			
+			if not len(column_values):
+				continue
+
+			row = column_values[-1]
+			yield (row, column)
+
+
+	def check_win_condition(self, board, player):
+
+		kernel = [
+			np.array([[1, 1, 1, 1]], dtype=np.int8),
+			np.array([[1], [1], [1], [1]], dtype=np.int8),
+			np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]], dtype=np.int8),
+			np.array([[0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0], [1, 0, 0, 0]], dtype=np.int8)
+		]
+
+		for k in kernel:
+
+			convolution = convolve2d(board, k, mode="valid")
+			# Check for winning position
+			if np.any(convolution == 4 * player):
+				return 100
+			# Check for losing position
+			elif np.any(convolution == -4 * player):
+				return -100
+
+		return 0
+
+
+	def evaluate_board(self, board, player):
+
+		# on finished game return immediately
+		evaluation = 0
+		
+		kernel = [
+			# horizontal
+			np.array([
+				[1, 1, 1, 1]
+				], dtype=np.int8),
+			# vertical
+			np.array([
+				[1], 
+				[1], 
+				[1], 
+				[1]
+				], dtype=np.int8),
+			# diagonal
+			np.array([
+				[1, 0, 0, 0], 
+				[0, 1, 0, 0], 
+				[0, 0, 1, 0], 
+				[0, 0, 0, 1]
+				], dtype=np.int8),
+			# diagonal
+			np.array([
+				[0, 0, 0, 1], 
+				[0, 0, 1, 0], 
+				[0, 1, 0, 0], 
+				[1, 0, 0, 0]
+				], dtype=np.int8)
+		]
+
+		# position_values = np.repeat(np.arange(6, dtype=np.int8)[:,np.newaxis], 7, axis=1)
+
+		for k in kernel:
+
+			convolution = convolve2d(board, k, mode="valid")
+			
+			# Check for winning position
+			if np.any(convolution == 4 * player):
+				return 100
+			# Check for losing position
+			elif np.any(convolution == -4 * player):
+				return -100
+			
+			if np.any(abs(convolution) == 3):
+
+				position_values = np.repeat(np.arange(5, convolution.shape[0]+5, dtype=np.int8)[:,np.newaxis], convolution.shape[1], axis=1)
+
+				evaluation += 5 * np.sum(position_values[convolution == (3 * player)])
+				evaluation -= 5 * np.sum(position_values[convolution == (-3 * player)])
+
+
+		position_values = np.array([
+			[1, 1, 1, 1, 1, 1, 1],
+			[1, 1, 1, 1, 1, 1, 1],
+			[1, 1, 1, 2, 1, 1, 1],
+			[1, 1, 1, 3, 1, 1, 1],
+			[1, 1, 2, 5, 2, 1, 1],
+			[1, 1, 3, 9, 3, 1, 1],
+		], dtype=np.int8)
+		
+		# check how many own pieces are in the middle row
+		evaluation += np.sum(np.multiply(board, position_values))
+
+		return evaluation
+
+
+
+
+class MinMaxAIController(AIController):
+	
+
+	def make_move(self, board, active_player):
 
 		start_time = time_ns()
 		max_value = -200
@@ -70,7 +181,7 @@ class AIController(Controller):
 				max_value = value
 				best_column = column
 
-			# print(f"Column {column+1} was valued at {value}.")
+			print(f"Column {column+1} was valued at {value}.")
 
 		delta_time = time_ns() - start_time
 		print(f"Choose Column {best_column+1} within {delta_time/10**9:.2f}s")
@@ -108,70 +219,77 @@ class AIController(Controller):
 		return min_max
 
 
-	def valid_moves(self, board, active_player):
-
-		for column in range(7):
-			(column_values,) = np.where(board[:,column] == 0)
-			
-			if not len(column_values):
-				continue
-
-			row = column_values[-1]
-			yield (row, column)
+class AlphaBetaAIController(AIController):
 
 
-	def check_win_condition(self, board, player):
+	def make_move(self, board, active_player):
 
-		kernel = [
-			np.array([[1, 1, 1, 1]], dtype=np.int8),
-			np.array([[1], [1], [1], [1]], dtype=np.int8),
-			np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]], dtype=np.int8),
-			np.array([[0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0], [1, 0, 0, 0]], dtype=np.int8)
-		]
+		start_time = time_ns()
+		max_value = -200
+		best_column = None
 
-		for k in kernel:
+		# check how many moves are left and adapt depth
+		depth = min(6, np.sum(board == 0)) 
 
-			convolusion = convolve2d(board, k, mode="valid")
-			# Check for winning position
-			if np.any(convolusion == 4 * player):
-				return 100
-			# Check for losing position
-			elif np.any(convolusion == -4 * player):
-				return -100
+		for row, column in self.valid_moves(board, active_player):
 
-		return 0
+			new_board = np.copy(board)
+			new_board[row, column] = active_player
 
+			value = self.a_b_prune(new_board, active_player, active_player*(-1), depth, -200, 200)
+			if value > max_value:
+				max_value = value
+				best_column = column
 
-	def evaluate_board(self, board, player):
+			print(f"Column {column+1} was valued at {value}.")
 
-		# on finished game return immediately
-		evaluation = self.check_win_condition(board, player)
-
-		if evaluation:
-			return evaluation
-		
-		# check for threats, namely 3 out of 4 are one color, the 4th is empty
-		kernel = [
-			np.array([[1, 1, 1, 1]], dtype=np.int8),
-			np.array([[1], [1], [1], [1]], dtype=np.int8),
-			np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]], dtype=np.int8),
-			np.array([[0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0], [1, 0, 0, 0]], dtype=np.int8)
-		]
-
-		for k in kernel:
-
-			convolusion = convolve2d(board, k, mode="valid")
-			
-			if np.any(abs(convolusion) == 3):
-				evaluation += 5 * np.sum(convolusion == 3 * player)
-				evaluation -= 5 * np.sum(convolusion == -3 * player)
-
-		
-		# check how many own pieces are in the middle row
-		evaluation += 3 * np.sum(board[:,3] == player)
-
-		return evaluation
+		delta_time = time_ns() - start_time
+		print(f"Choose Column {best_column+1} within {delta_time/10**9:.2f}s")
+		return best_column
 
 
-	def search_board_for_pattern(self, board, pattern):
-		pass
+	def a_b_prune(self, board, player, active_player, depth, alpha, beta):
+
+		# at maximum depth, return board evaluation
+		if not depth:
+			return self.evaluate_board(board, player)
+
+		# if at any time any parties win is imminent, return immediately
+		early_win = self.check_win_condition(board, player)
+		if early_win:
+			return early_win
+
+		# set comparison value in dependence of whose turn it is
+		if player == active_player:
+			min_max = alpha
+		else:
+			min_max = beta
+
+		# get all possible moves
+		for row, column in self.valid_moves(board,active_player):
+
+			# create new board with current move updated
+			new_board = np.copy(board)
+			new_board[row, column] = active_player
+
+			# proceed a_b_pruning by checking local alpha or beta value
+			if player == active_player:
+				evaluation = self.a_b_prune(new_board, player, active_player*(-1), depth-1, min_max, beta)
+				min_max = max(evaluation, min_max)
+				if min_max >= beta:
+					return min_max
+
+			else:
+				evaluation = self.a_b_prune(new_board, player, active_player*(-1), depth-1, alpha, min_max)
+				min_max = min(evaluation, min_max)
+				if min_max <= alpha:
+					return min_max
+
+		return min_max
+
+
+def main():
+	pass
+
+if __name__ == "__main__":
+	main()

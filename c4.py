@@ -4,7 +4,7 @@ import random
 import numpy as np
 from scipy.signal import convolve2d
 
-from controller import Controller, PlayerController, RandomController, AIController
+from controller import *
 
 class Color:
 	blue = '\033[94m'
@@ -119,7 +119,7 @@ class C4Game:
 
 def main():
 
-	c4 = C4Game(PlayerController("Player"), AIController("AI"))
+	c4 = C4Game(AlphaBetaAIController("ABP"), MinMaxAIController("MM"))
 
 	c4.game_loop()
 
